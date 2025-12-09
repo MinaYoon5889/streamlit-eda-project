@@ -192,27 +192,18 @@ st.plotly_chart(fig_corr, use_container_width=True)
 st.markdown("---")
 
 # Scatter Matrix (Pairwise Comparison)
-st.header("Pairwise Variable Comparison (Scatter-Matrix)")
-scatter_cols = ["Log_Total_Sales", "Review_Rating", "Delivered_Flag", "Satisfied"]
+st.subheader("Scatter Matrix")
 
-fig_matrix = px.scatter_matrix(
-    filtered,
-    dimensions=scatter_cols,
-    color="Product_Category",
-    title="Scatter Matrix of Key Variables",
-    color_discrete_sequence=px.colors.qualitative.Alphabet,
-    opacity=0.6)
+vars_to_plot = ["Log_Total_Sales", "Review_Rating", "Delivered_Flag", "Satisfied"]
 
-fig_matrix.update_traces(diagonal_visible=False, marker=dict(size=4))
+g = sns.PairGrid(filtered, vars=vars_to_plot, hue="Product_Category", corner=False)
 
-fig_matrix.update_layout(
-    width=900,
-    height=900,
-    title_x=0.5,
-    dragmode="select",
-    margin=dict(l=40, r=40, t=80, b=40),)
+g.map_diag(sns.kdeplot, fill=True, alpha=0.6)
+g.map_offdiag(sns.scatterplot, s=10, alpha=0.5)
 
-st.plotly_chart(fig_matrix, use_container_width=True)
+g.add_legend()
+
+st.pyplot(g.fig)
 
 st.markdown("---")
 
