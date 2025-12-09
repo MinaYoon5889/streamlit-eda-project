@@ -193,7 +193,7 @@ st.plotly_chart(fig_corr, use_container_width=True)
 st.markdown("---")
 
 # Scatter Matrix (Pairwise Comparison)
-st.subheader("Scatter Matrix with Trend Lines")
+st.header("Scatter Matrix with Trend Lines")
 
 pairs = [
     ("Log_Total_Sales", "Review_Rating"),
