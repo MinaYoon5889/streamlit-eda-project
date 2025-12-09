@@ -193,18 +193,25 @@ st.plotly_chart(fig_corr, use_container_width=True)
 st.markdown("---")
 
 # Scatter Matrix (Pairwise Comparison)
-st.subheader("Scatter Matrix")
+st.subheader("Enhanced Scatter Matrix with Trend Lines")
 
-vars_to_plot = ["Log_Total_Sales", "Review_Rating", "Delivered_Flag", "Satisfied"]
+pairs = [
+    ("Log_Total_Sales", "Review_Rating"),
+    ("Log_Total_Sales", "Satisfied"),
+    ("Review_Rating", "Satisfied"),
+    ("Delivered_Flag", "Satisfied")]
 
-g = sns.PairGrid(filtered, vars=vars_to_plot, hue="Product_Category", corner=False)
-
-g.map_diag(sns.kdeplot, fill=True, alpha=0.6)
-g.map_offdiag(sns.scatterplot, s=10, alpha=0.5)
-
-g.add_legend()
-
-st.pyplot(g.fig)
+for x, y in pairs:
+    fig = px.scatter(
+        filtered,
+        x=x,
+        y=y,
+        color="Product_Category",
+        trendline="ols",
+        opacity=0.6,
+        title=f"{x} vs {y}",)
+    fig.update_layout(title_x=0.5, height=450)
+    st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
 
