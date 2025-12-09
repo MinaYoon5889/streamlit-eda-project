@@ -1,27 +1,18 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import seaborn as sns
 import plotly.express as px
 import plotly.figure_factory as ff
 
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv("data/processed/diwali_sales_clean.csv")
+    df = pd.read_csv("data/raw/amazon_sales_2025_INR.csv")
     df["Date"] = pd.to_datetime(df["Date"])
     df["Month"] = df["Date"].dt.month
     df["Month_Name"] = df["Date"].dt.strftime("%b")
     df["Quarter"] = df["Date"].dt.quarter
-    cat_cols = [
-        "Product_Category",
-        "Product_Name",
-        "Payment_Method",
-        "Delivery_Status",
-        "State",
-        "Country"
-    ]
-    for col in cat_cols:
-        df[col] = df[col].astype("category")
     df["Delivered_Flag"] = (df["Delivery_Status"] == "Delivered").astype(int)
     df["Satisfied"] = (df["Review_Rating"] >= 4).astype(int)
     df["Log_Total_Sales"] = np.log(df["Total_Sales_INR"] + 1)
@@ -54,19 +45,24 @@ filtered = df[
 st.title("Amazon Diwali Sales 2025 Dashboard")
 st.write("A complete analytics dashboard including sales trends, ratings, payments, correlations, forecasting, and anomaly detection.")
 
+def format_large(n):
+    if n >= 1_000_000_000:
+        return f"{n/1_000_000_000:.2f} B"
+    elif n >= 1_000_000:
+        return f"{n/1_000_000:.2f} M"
+    elif n >= 1_000:
+        return f"{n/1_000:.2f} K"
+    else:
+        return f"{n:,}"
+
 col1, col2, col3 = st.columns(3)
-col1.metric("Total Revenue (INR)", f"{filtered['Total_Sales_INR'].sum():,}")
+
+total_rev = filtered['Total_Sales_INR'].sum()
+col1.metric("Total Revenue (INR)", format_large(total_rev))
 col2.metric("Avg Rating", f"{filtered['Review_Rating'].mean():.2f}")
 col3.metric("Delivery Success Rate", f"{filtered['Delivered_Flag'].mean()*100:.1f}%")
 
 st.markdown("---")
-
-st.header("Raw Data Table")
-st.write("Below is a preview of the top 10 rows of the raw dataset.")
-st.dataframe(df.head(10))  # Display top 10 rows
-
-st.markdown("---")
-
 
 # RQ1: Sales by Product Category
 st.header("RQ1: Sales by Product Category")
@@ -196,18 +192,26 @@ st.plotly_chart(fig_corr, use_container_width=True)
 
 st.markdown("---")
 
-# Scatter Matrix (Pairwise Comparison)
+# Scatter Matrix
+st.header("Scatter Matrix with Trend Lines")
 
-st.header("Pairwise Variable Comparison (Scatter-Matrix)")
+pairs = [
+    ("Log_Total_Sales", "Review_Rating"),
+    ("Log_Total_Sales", "Satisfied"),
+    ("Review_Rating", "Satisfied"),
+    ("Delivered_Flag", "Satisfied")]
 
-fig_matrix = px.scatter_matrix(
-    filtered,
-    dimensions=numeric_cols,
-    color="Product_Category",
-    title="Scatter Matrix of Key Variables",
-    color_discrete_sequence=px.colors.qualitative.Alphabet,)
-fig_matrix.update_traces(diagonal_visible=False)
-st.plotly_chart(fig_matrix, use_container_width=True)
+for x, y in pairs:
+    fig = px.scatter(
+        filtered,
+        x=x,
+        y=y,
+        color="Product_Category",
+        trendline="ols",
+        opacity=0.6,
+        title=f"{x} vs {y}",)
+    fig.update_layout(title_x=0.5, height=450)
+    st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
 
